@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>Hello World!</title>
+		<style>
+			body { background: #999; color: #fff; }
+			header { display: block; width: 100%; margin-bottom: 20px; }
+			.system_info, .test_set { display: block; width: 100%; }
+			.test_column { display: inline-block; width: 49.5%; vertical-align: top; }
+			[data-drag-target] { display: block; width: 100%; height: 50px; background: #000; }
+		</style>
+	</head>
+	<body>
+		<header>
+			<h1>Hello World!</h1>
+		</header>
+		<div class='system_info'>
+			<table>
+				<tr>
+					<th>App</th>
+					<th>Ver</th>
+				</tr>
+				<tr>
+					<td>Node</td>
+					<td><script>document.write(process.versions.node)</script></td>
+				</tr>
+				<tr>
+					<td>Chrome</td>
+					<td><script>document.write(process.versions.chrome)</script></td>
+				</tr>
+				<tr>
+					<td>Electron</td>
+					<td><script>document.write(process.versions.electron)</script></td>
+				</tr>
+			</table>
+		</div>
+
+		<div class='test_set'>
+			<div class='test_column'>
+				<h2>Test FS access</h2>
+				<div ondrop="dropHandler(event);" ondragover="dragOverHandler(event);" data-drag-target>Drag your files here...</div>
+				<ul data-file-results-area></ul>
+			</div>
+			<div class='test_column'>
+				<h2>Test Request</h2>
+				<button data-button>Fact Me!</button>
+				<ul data-facts-results-area></ul>
+			</div>
+		</div>
+	</body>
+</html>
+
+<script>
+	const axios = require("axios");
+	const button = document.querySelector('[data-button]');
+	const factsList = document.querySelector('[data-facts-results-area]');
+	const fileList = document.querySelector('[data-file-results-area]');
+	function dragOverHandler(ev) {
+		// Prevent default behavior (Prevent file from being opened)
+		ev.preventDefault();
+	}
+
+	function dropHandler(ev) {
+		addFile('File(s) dropped');
+
+		// Prevent default behavior (Prevent file from being opened)
+		ev.preventDefault();
+
+		if (ev.dataTransfer.items) {
+			// Use DataTransferItemList interface to access the file(s)
+			for (var i = 0; i < ev.dataTransfer.items.length; i++) {
+				// If dropped items aren't files, reject them
+				if (ev.dataTransfer.items[i].kind === 'file') {
+					var file = ev.dataTransfer.items[i].getAsFile();
+					addFile(file.name);
+				}
+			}
+		} else {
+			// Use DataTransfer interface to access the file(s)
+			for (var i = 0; i < ev.dataTransfer.files.length; i++) {
+				addFile(ev.dataTransfer.files[i].name);
+			}
+		}
+	}
+
+	button.addEventListener("click", async function(){
+		addFact('Requesting....');
+		try { 
+			const resp = await axios.get('https://catfact.ninja/fact');
+			addFact(`Fact: ${resp.data.fact}`);
+		}catch(err){
+			addFact(`Fact: ${err.message}`);
+		}
+	});
+
+	function addFile(file){
+		updateList(fileList, file);
+	}
+
+	function addFact(fact){
+		updateList(factsList, fact);
+	}
+
+	function updateList(list, text){
+		prepend(list, 'li', text);
+	}
+
+	function prepend(target, element, contents){
+		const child = document.createElement(element);
+		child.innerHTML = contents;
+		target.prepend(child);
+	}
+</script>
